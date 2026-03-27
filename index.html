@@ -1,0 +1,84 @@
+﻿<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>LinkedIn Slop Cop</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <div class="bg-orb orb-a" aria-hidden="true"></div>
+  <div class="bg-orb orb-b" aria-hidden="true"></div>
+
+  <div id="intro-overlay" class="overlay" aria-live="polite">
+    <section class="overlay-card">
+      <p class="overlay-kicker">Case Briefing</p>
+      <h2>LinkedIn Slop Cop</h2>
+      <p class="overlay-subtitle">Can you differentiate authentic human writing from AI slop?</p>
+      <ul class="rules-list">
+        <li>You will review 10 long-form LinkedIn posts.</li>
+        <li>Each round gives you 20 seconds to make a call: Human or AI.</li>
+        <li>If you answer, the result stays on screen for 5 seconds.</li>
+        <li>If time runs out, the quiz auto-reveals the answer and moves on.</li>
+      </ul>
+      <button id="start-btn" class="btn start" type="button">Understood. Let's play Cop!</button>
+    </section>
+  </div>
+
+  <main class="app">
+    <section class="main-panel">
+      <header class="header">
+        <p class="eyebrow">Digital Forensics Unit</p>
+        <h1>LinkedIn Slop Cop</h1>
+        <p class="subtitle">Can you differentiate authentic human writing from AI slop?</p>
+      </header>
+
+      <section id="quiz-card" class="card" aria-live="polite">
+        <div class="meta-row">
+          <span id="question-progress" class="pill"></span>
+          <span id="score-preview" class="pill"></span>
+          <span id="timer-display" class="pill timer-pill"></span>
+        </div>
+
+        <div class="timer-track" aria-hidden="true">
+          <div id="timer-fill" class="timer-fill"></div>
+        </div>
+
+        <article id="post-content" class="post">
+          <div class="li-header">
+            <div id="post-initials" class="li-avatar"></div>
+            <div class="li-author-wrap">
+              <p id="post-author" class="li-author"></p>
+              <p id="post-headline" class="li-headline"></p>
+              <p id="post-meta" class="li-meta"></p>
+            </div>
+          </div>
+          <div id="post-body" class="li-body"></div>
+          <div class="li-footer">
+            <span>Like</span>
+            <span>Comment</span>
+            <span>Repost</span>
+            <span>Send</span>
+          </div>
+        </article>
+
+        <div class="actions" role="group" aria-label="Answer options">
+          <button id="answer-human" class="btn answer human" type="button">Human</button>
+          <button id="answer-ai" class="btn answer ai" type="button">AI</button>
+        </div>
+
+        <div id="feedback" class="feedback" aria-live="polite"></div>
+      </section>
+
+      <section id="result-card" class="card hidden" aria-live="polite">
+        <h2>Case Closed</h2>
+        <p id="final-score" class="result-line"></p>
+        <p id="final-detail" class="result-line"></p>
+        <button id="restart-btn" class="btn" type="button">Run Another Investigation</button>
+      </section>
+    </section>
+  </main>
+
+  <script src="app.js"></script>
+</body>
+</html>

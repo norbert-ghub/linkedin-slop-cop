@@ -64,7 +64,7 @@ body {
   max-width: 980px;
   margin: 0 auto;
   padding: 12px 14px;
-  height: 100vh;
+  height: 100dvh;
 }
 
 .main-panel {
@@ -92,6 +92,17 @@ body {
   line-height: 1.05;
 }
 
+.header-top {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 220px;
+  gap: 10px;
+  align-items: center;
+}
+
+.header-copy {
+  min-width: 0;
+}
+
 .eyebrow {
   margin: 0;
   color: #334155;
@@ -105,6 +116,22 @@ body {
   margin: 6px 0 0;
   color: var(--ink-soft);
   font-size: 0.9rem;
+}
+
+.header-side-image {
+  border-radius: 10px;
+  overflow: hidden;
+  border: 1px solid #cbd5e1;
+  height: 88px;
+  background: #0f172a;
+}
+
+.header-side-image img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center center;
+  display: block;
 }
 
 .card {
@@ -130,6 +157,7 @@ body {
   display: flex;
   gap: 8px;
   flex-wrap: wrap;
+  justify-content: space-between;
 }
 
 .pill {
@@ -278,31 +306,6 @@ body {
   filter: none;
 }
 
-.feedback {
-  min-height: 1.4rem;
-  margin-top: 8px;
-  font-weight: 800;
-  letter-spacing: 0.01em;
-  background: #eef2ff;
-  border-radius: 10px;
-  padding: 8px 10px;
-  font-size: 0.88rem;
-}
-
-.feedback.good {
-  color: var(--good);
-}
-
-.feedback.bad {
-  color: var(--bad);
-}
-
-#result-card {
-  justify-content: center;
-  text-align: center;
-  gap: 6px;
-}
-
 #restart-btn,
 .start {
   background: linear-gradient(180deg, #1f2937 0%, #111827 100%);
@@ -334,6 +337,110 @@ body {
   border-radius: 18px;
   box-shadow: 0 24px 42px rgba(17, 24, 39, 0.35);
   padding: 18px;
+}
+
+.answer-card,
+.final-card {
+  width: min(560px, 100%);
+}
+
+.answer-card h2,
+.final-card h2 {
+  margin: 10px 0 6px;
+}
+
+.answer-card {
+  border-width: 4px;
+}
+
+.answer-card.state-correct {
+  background: linear-gradient(180deg, #ecfdf5 0%, #f0fdf4 100%);
+  border-color: #22c55e;
+}
+
+.answer-card.state-wrong {
+  background: linear-gradient(180deg, #fef2f2 0%, #fff1f2 100%);
+  border-color: #ef4444;
+}
+
+.answer-icon {
+  margin-top: 10px;
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  font-size: 1.45rem;
+  font-weight: 900;
+}
+
+.answer-card.state-correct .answer-icon {
+  background: #22c55e;
+  color: #ffffff;
+}
+
+.answer-card.state-wrong .answer-icon {
+  background: #ef4444;
+  color: #ffffff;
+}
+
+.share-actions {
+  margin-top: 12px;
+  display: grid;
+  grid-template-columns: repeat(4, minmax(110px, 1fr));
+  gap: 8px;
+}
+
+.share-actions.single {
+  grid-template-columns: 1fr;
+}
+
+.btn.share {
+  background: linear-gradient(180deg, #1f2937 0%, #111827 100%);
+  font-size: 0.85rem;
+}
+
+.btn.share.alt {
+  background: linear-gradient(180deg, #334155 0%, #1f2937 100%);
+}
+
+.btn.social {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  font-size: 0.82rem;
+}
+
+.social-icon {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255, 255, 255, 0.24);
+  font-size: 0.72rem;
+  font-weight: 900;
+  text-transform: lowercase;
+}
+
+.btn.social.linkedin {
+  background: linear-gradient(180deg, #0a66c2 0%, #084a96 100%);
+}
+
+.btn.social.facebook {
+  background: linear-gradient(180deg, #1877f2 0%, #145ec3 100%);
+}
+
+.btn.social.whatsapp {
+  background: linear-gradient(180deg, #25d366 0%, #1ea755 100%);
+}
+
+.share-status {
+  margin-top: 10px;
+  font-size: 0.82rem;
+  color: #475569;
 }
 
 .overlay-kicker {
@@ -368,14 +475,79 @@ body {
 
 @media (max-width: 720px) {
   .app {
-    padding: 10px;
+    padding: 8px;
   }
 
   .main-panel {
+    gap: 8px;
+    padding: 8px;
     border-radius: 16px;
+  }
+
+  .header {
+    padding: 6px 8px;
+  }
+
+  .header h1 {
+    font-size: 1.2rem;
+  }
+
+  .subtitle {
+    font-size: 0.8rem;
+  }
+
+  .header-top {
+    grid-template-columns: 1fr;
+  }
+
+  .header-side-image {
+    height: 72px;
+  }
+
+  .header-side-image img {
+    object-position: center 42%;
+  }
+
+  .pill {
+    font-size: 0.72rem;
+    padding: 4px 8px;
+  }
+
+  .li-footer {
+    display: none;
+  }
+
+  .li-body {
+    font-size: 0.83rem;
+    line-height: 1.35;
+    padding: 8px 9px;
   }
 
   .actions {
     grid-template-columns: 1fr;
+    gap: 7px;
+    margin-top: 7px;
+  }
+
+  .btn {
+    padding: 9px 10px;
+  }
+
+  .overlay {
+    padding: 8px;
+  }
+
+  .overlay-card {
+    padding: 12px;
+    border-radius: 12px;
+  }
+
+  .rules-list {
+    margin: 8px 0 10px;
+    line-height: 1.35;
+  }
+
+  .share-actions {
+    grid-template-columns: repeat(2, 1fr);
   }
 }

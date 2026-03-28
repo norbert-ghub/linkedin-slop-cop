@@ -121,9 +121,22 @@ const fallbackPosts = {
 
 const els = {
   introOverlay: document.getElementById("intro-overlay"),
+  answerOverlay: document.getElementById("answer-overlay"),
+  answerKicker: document.getElementById("answer-kicker"),
+  answerIcon: document.getElementById("answer-icon"),
+  answerTitle: document.getElementById("answer-title"),
+  answerDetail: document.getElementById("answer-detail"),
+  answerNextBtn: document.getElementById("answer-next-btn"),
+  finalOverlay: document.getElementById("final-overlay"),
+  finalOverlayScore: document.getElementById("final-overlay-score"),
+  finalOverlayDetail: document.getElementById("final-overlay-detail"),
+  shareLinkedInBtn: document.getElementById("share-linkedin-btn"),
+  shareFacebookBtn: document.getElementById("share-facebook-btn"),
+  shareWhatsAppBtn: document.getElementById("share-whatsapp-btn"),
+  playAgainBtn: document.getElementById("play-again-btn"),
+  shareStatus: document.getElementById("share-status"),
   startBtn: document.getElementById("start-btn"),
   quizCard: document.getElementById("quiz-card"),
-  resultCard: document.getElementById("result-card"),
   progress: document.getElementById("question-progress"),
   scorePreview: document.getElementById("score-preview"),
   timerDisplay: document.getElementById("timer-display"),
@@ -136,10 +149,7 @@ const els = {
   postInitials: document.getElementById("post-initials"),
   humanBtn: document.getElementById("answer-human"),
   aiBtn: document.getElementById("answer-ai"),
-  feedback: document.getElementById("feedback"),
-  finalScore: document.getElementById("final-score"),
-  finalDetail: document.getElementById("final-detail"),
-  restartBtn: document.getElementById("restart-btn")
+  finalOverlayTitle: document.getElementById("final-overlay-title")
 };
 
 const state = {
@@ -226,6 +236,55 @@ function setTimerVisuals(secondsLeft, totalSeconds, prefix) {
   els.timerFill.style.width = `${Math.max(0, Math.min(1, ratio)) * 100}%`;
 }
 
+function showAnswerOverlay(kicker, title, detail, outcome) {
+  const isCorrect = outcome === "correct";
+  const card = els.answerOverlay.querySelector(".answer-card");
+
+  card.classList.remove("state-correct", "state-wrong");
+  card.classList.add(isCorrect ? "state-correct" : "state-wrong");
+
+  els.answerKicker.textContent = kicker;
+  els.answerIcon.textContent = isCorrect ? "✓" : "✕";
+  els.answerTitle.textContent = title;
+  els.answerDetail.textContent = detail;
+  els.answerOverlay.classList.remove("hidden");
+}
+
+function hideAnswerOverlay() {
+  els.answerOverlay.classList.add("hidden");
+}
+
+function buildShareText() {
+  const percentage = Math.round((state.score / QUIZ_LENGTH) * 100);
+  return `I scored ${state.score}/${QUIZ_LENGTH} (${percentage}%) on LinkedIn Slop Cop. Can you beat me?`;
+}
+
+function openShareWindow(url) {
+  window.open(url, "_blank", "noopener,noreferrer,width=760,height=620");
+}
+
+function shareToLinkedIn() {
+  const text = `${buildShareText()} ${window.location.href}`;
+  const shareUrl = `https://www.linkedin.com/feed/?shareActive=true&text=${encodeURIComponent(text)}`;
+  openShareWindow(shareUrl);
+  els.shareStatus.textContent = "Opened LinkedIn share.";
+}
+
+function shareToFacebook() {
+  const pageUrl = window.location.href;
+  const quote = buildShareText();
+  const shareUrl = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(pageUrl)}&quote=${encodeURIComponent(quote)}`;
+  openShareWindow(shareUrl);
+  els.shareStatus.textContent = "Opened Facebook share.";
+}
+
+function shareToWhatsApp() {
+  const text = `${buildShareText()} ${window.location.href}`;
+  const shareUrl = `https://wa.me/?text=${encodeURIComponent(text)}`;
+  openShareWindow(shareUrl);
+  els.shareStatus.textContent = "Opened WhatsApp share.";
+}
+
 function normalizeRemotePosts(remote) {
   const normalized = { human: [], ai: [] };
 
@@ -304,8 +363,9 @@ function resetRoundState() {
   state.score = 0;
   state.answered = false;
   state.userAnswers = [];
-  els.feedback.textContent = "";
-  els.feedback.className = "feedback";
+  els.answerOverlay.classList.add("hidden");
+  els.finalOverlay.classList.add("hidden");
+  els.shareStatus.textContent = "";
 }
 
 function updateMeta() {
@@ -333,6 +393,7 @@ function finishQuizIfNeeded() {
 }
 
 function advanceQuestion() {
+  hideAnswerOverlay();
   state.index += 1;
   if (finishQuizIfNeeded()) {
     return;
@@ -363,6 +424,15 @@ function startResultHoldCountdown() {
   }, 100);
 }
 
+function skipAnswerOverlayWait() {
+  if (els.answerOverlay.classList.contains("hidden")) {
+    return;
+  }
+
+  clearTimers();
+  advanceQuestion();
+}
+
 function handleTimeout() {
   if (state.answered) {
     return;
@@ -379,8 +449,12 @@ function handleTimeout() {
     timedOut: true
   });
 
-  els.feedback.textContent = `${pickMessage(timeoutFeedbackLines)} Correct answer: ${q.answer.toUpperCase()}.`;
-  els.feedback.className = "feedback bad";
+  showAnswerOverlay(
+    "Time Up",
+    "No guess submitted",
+    `${pickMessage(timeoutFeedbackLines)} Correct answer: ${q.answer.toUpperCase()}.`,
+    "wrong"
+  );
 
   lockAnswerButtons();
   startResultHoldCountdown();
@@ -416,8 +490,6 @@ function renderCurrentQuestion() {
   renderLinkedInPost(q);
 
   state.answered = false;
-  els.feedback.textContent = "Pick your guess before the timer runs out.";
-  els.feedback.className = "feedback";
 
   unlockAnswerButtons();
   startQuestionCountdown();
@@ -444,11 +516,14 @@ function submitAnswer(choice) {
 
   if (isCorrect) {
     state.score += 1;
-    els.feedback.textContent = pickMessage(correctFeedbackLines);
-    els.feedback.className = "feedback good";
+    showAnswerOverlay("Correct", "Good call, detective.", pickMessage(correctFeedbackLines), "correct");
   } else {
-    els.feedback.textContent = `${pickMessage(wrongFeedbackLines)} Correct answer: ${q.answer.toUpperCase()}.`;
-    els.feedback.className = "feedback bad";
+    showAnswerOverlay(
+      "Incorrect",
+      "That one slipped past your radar.",
+      `${pickMessage(wrongFeedbackLines)} Correct answer: ${q.answer.toUpperCase()}.`,
+      "wrong"
+    );
   }
 
   lockAnswerButtons();
@@ -459,19 +534,22 @@ function submitAnswer(choice) {
 function showResults() {
   clearTimers();
   setTimerBarVisible(false);
+  hideAnswerOverlay();
 
   els.quizCard.classList.add("hidden");
-  els.resultCard.classList.remove("hidden");
+  els.finalOverlay.classList.remove("hidden");
+  els.shareStatus.textContent = "";
 
   const percentage = Math.round((state.score / QUIZ_LENGTH) * 100);
-  els.finalScore.textContent = `You scored ${state.score} out of ${QUIZ_LENGTH} (${percentage}%).`;
+  els.finalOverlayTitle.textContent = "Score Summary";
+  els.finalOverlayScore.textContent = `You scored ${state.score} out of ${QUIZ_LENGTH} (${percentage}%).`;
 
   if (percentage >= 80) {
-    els.finalDetail.textContent = "Absolute mind-reader mode. Your AI detector is elite.";
+    els.finalOverlayDetail.textContent = "Absolute mind-reader mode. Your AI detector is elite.";
   } else if (percentage >= 60) {
-    els.finalDetail.textContent = "Strong instincts. You caught most of the tricks.";
+    els.finalOverlayDetail.textContent = "Strong instincts. You caught most of the tricks.";
   } else {
-    els.finalDetail.textContent = "Wild round. Run it back and sharpen that radar.";
+    els.finalOverlayDetail.textContent = "Wild round. Run it back and sharpen that radar.";
   }
 }
 
@@ -482,7 +560,7 @@ async function startGame() {
   state.questions = buildQuizQuestions(postBank);
 
   resetRoundState();
-  els.resultCard.classList.add("hidden");
+  els.finalOverlay.classList.add("hidden");
   els.quizCard.classList.remove("hidden");
   renderCurrentQuestion();
 }
@@ -494,7 +572,11 @@ function startGameFromOverlay() {
 
 els.humanBtn.addEventListener("click", () => submitAnswer("human"));
 els.aiBtn.addEventListener("click", () => submitAnswer("ai"));
-els.restartBtn.addEventListener("click", startGame);
 els.startBtn.addEventListener("click", startGameFromOverlay);
+els.playAgainBtn.addEventListener("click", startGame);
+els.shareLinkedInBtn.addEventListener("click", shareToLinkedIn);
+els.shareFacebookBtn.addEventListener("click", shareToFacebook);
+els.shareWhatsAppBtn.addEventListener("click", shareToWhatsApp);
+els.answerNextBtn.addEventListener("click", skipAnswerOverlayWait);
 
 setTimerBarVisible(false);

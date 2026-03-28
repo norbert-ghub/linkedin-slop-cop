@@ -25,12 +25,59 @@
     </section>
   </div>
 
+  <div id="answer-overlay" class="overlay hidden" aria-live="polite">
+    <section class="overlay-card answer-card">
+      <p id="answer-kicker" class="overlay-kicker">Verdict</p>
+      <div id="answer-icon" class="answer-icon" aria-hidden="true">✓</div>
+      <h2 id="answer-title"></h2>
+      <p id="answer-detail" class="overlay-subtitle"></p>
+      <div class="share-actions single">
+        <button id="answer-next-btn" class="btn share" type="button">Next</button>
+      </div>
+    </section>
+  </div>
+
+  <div id="final-overlay" class="overlay hidden" aria-live="polite">
+    <section class="overlay-card final-card">
+      <p class="overlay-kicker">Case Closed</p>
+      <h2 id="final-overlay-title">Score Summary</h2>
+      <p id="final-overlay-score" class="overlay-subtitle"></p>
+      <p id="final-overlay-detail" class="overlay-subtitle"></p>
+      <div class="share-actions">
+        <button id="share-linkedin-btn" class="btn social linkedin" type="button" aria-label="Share on LinkedIn">
+          <span class="social-icon">in</span>
+          <span>LinkedIn</span>
+        </button>
+        <button id="share-facebook-btn" class="btn social facebook" type="button" aria-label="Share on Facebook">
+          <span class="social-icon">f</span>
+          <span>Facebook</span>
+        </button>
+        <button id="share-whatsapp-btn" class="btn social whatsapp" type="button" aria-label="Share on WhatsApp">
+          <span class="social-icon">wa</span>
+          <span>WhatsApp</span>
+        </button>
+        <button id="play-again-btn" class="btn share" type="button">Play Again</button>
+      </div>
+      <p id="share-status" class="overlay-subtitle share-status"></p>
+    </section>
+  </div>
+
   <main class="app">
     <section class="main-panel">
       <header class="header">
-        <p class="eyebrow">Digital Forensics Unit</p>
-        <h1>LinkedIn Slop Cop</h1>
-        <p class="subtitle">Can you differentiate authentic human writing from AI slop?</p>
+        <div class="header-top">
+          <div class="header-copy">
+            <p class="eyebrow">Digital Forensics Unit</p>
+            <h1>LinkedIn Slop Cop</h1>
+            <p class="subtitle">Can you differentiate authentic human writing from AI slop?</p>
+          </div>
+          <div class="header-side-image">
+            <img
+              src="assets/1747e622-e077-4458-9b77-057934a12744.jpg"
+              alt="Detective style magnifying glass truth image"
+            />
+          </div>
+        </div>
       </header>
 
       <section id="quiz-card" class="card" aria-live="polite">
@@ -66,15 +113,6 @@
           <button id="answer-human" class="btn answer human" type="button">Human</button>
           <button id="answer-ai" class="btn answer ai" type="button">AI</button>
         </div>
-
-        <div id="feedback" class="feedback" aria-live="polite"></div>
-      </section>
-
-      <section id="result-card" class="card hidden" aria-live="polite">
-        <h2>Case Closed</h2>
-        <p id="final-score" class="result-line"></p>
-        <p id="final-detail" class="result-line"></p>
-        <button id="restart-btn" class="btn" type="button">Run Another Investigation</button>
       </section>
     </section>
   </main>

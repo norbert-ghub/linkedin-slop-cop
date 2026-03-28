@@ -161,8 +161,8 @@ const els = {
   finalOverlayScore: document.getElementById("final-overlay-score"),
   finalOverlayDetail: document.getElementById("final-overlay-detail"),
   shareLinkedInBtn: document.getElementById("share-linkedin-btn"),
-  shareFacebookBtn: document.getElementById("share-facebook-btn"),
   shareWhatsAppBtn: document.getElementById("share-whatsapp-btn"),
+  copyShareBtn: document.getElementById("copy-share-btn"),
   playAgainBtn: document.getElementById("play-again-btn"),
   shareStatus: document.getElementById("share-status"),
   startBtn: document.getElementById("start-btn"),
@@ -311,20 +311,22 @@ function openShareWindow(url) {
 function shareToLinkedIn() {
   const text = buildShareTextWithLink();
   openShareWindow(`https://www.linkedin.com/feed/?shareActive=true&text=${encodeURIComponent(text)}`);
-  els.shareStatus.textContent = "Opened LinkedIn share.";
-}
-
-function shareToFacebook() {
-  const pageUrl = getShareGameUrl();
-  const quote = buildShareTextWithLink();
-  openShareWindow(`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(pageUrl)}&quote=${encodeURIComponent(quote)}`);
-  els.shareStatus.textContent = "Opened Facebook share.";
+  els.shareStatus.textContent = "Opened LinkedIn share. If the platform trims text, tap Copy Text and paste.";
 }
 
 function shareToWhatsApp() {
   const text = buildShareTextWithLink();
   openShareWindow(`https://wa.me/?text=${encodeURIComponent(text)}`);
   els.shareStatus.textContent = "Opened WhatsApp share.";
+}
+
+async function copyShareText() {
+  try {
+    await navigator.clipboard.writeText(buildShareTextWithLink());
+    els.shareStatus.textContent = "Copied share text.";
+  } catch {
+    els.shareStatus.textContent = "Could not copy. Please copy manually.";
+  }
 }
 
 function buildTemplatePool(label, templates, total) {
@@ -730,8 +732,8 @@ els.aiBtn.addEventListener("click", () => submitAnswer("ai"));
 els.startBtn.addEventListener("click", startGameFromOverlay);
 els.playAgainBtn.addEventListener("click", startGame);
 els.shareLinkedInBtn.addEventListener("click", shareToLinkedIn);
-els.shareFacebookBtn.addEventListener("click", shareToFacebook);
 els.shareWhatsAppBtn.addEventListener("click", shareToWhatsApp);
+els.copyShareBtn.addEventListener("click", copyShareText);
 els.answerNextBtn.addEventListener("click", skipAnswerOverlayWait);
 
 setTimerBarVisible(false);

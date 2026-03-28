@@ -429,12 +429,12 @@ body {
   background: linear-gradient(180deg, #0a66c2 0%, #084a96 100%);
 }
 
-.btn.social.facebook {
-  background: linear-gradient(180deg, #1877f2 0%, #145ec3 100%);
-}
-
 .btn.social.whatsapp {
   background: linear-gradient(180deg, #25d366 0%, #1ea755 100%);
+}
+
+.btn.social.copy {
+  background: linear-gradient(180deg, #334155 0%, #1f2937 100%);
 }
 
 .share-status {

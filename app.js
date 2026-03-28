@@ -6,6 +6,7 @@ const RESULT_HOLD_SECONDS = 5;
 
 // Keep null for local-only mode. Point this to your compliant backend feed when ready.
 const REMOTE_POSTS_URL = null;
+const SHARE_GAME_URL = "https://linkedin-slop-cop.vercel.app/";
 
 const MIN_CONFIDENCE = 0.75;
 const SEEN_STORAGE_KEY = "slop_cop_seen_ids_v1";
@@ -287,25 +288,41 @@ function buildShareText() {
   return `I scored ${state.score}/${QUIZ_LENGTH} (${percentage}%) on LinkedIn Slop Cop. Can you beat me?`;
 }
 
+function getShareGameUrl() {
+  if (SHARE_GAME_URL && SHARE_GAME_URL.startsWith("http")) {
+    return SHARE_GAME_URL;
+  }
+
+  if (window.location.protocol === "http:" || window.location.protocol === "https:") {
+    return window.location.href;
+  }
+
+  return "https://linkedin-slop-cop.vercel.app/";
+}
+
+function buildShareTextWithLink() {
+  return `${buildShareText()} ${getShareGameUrl()}`;
+}
+
 function openShareWindow(url) {
   window.open(url, "_blank", "noopener,noreferrer,width=760,height=620");
 }
 
 function shareToLinkedIn() {
-  const text = `${buildShareText()} ${window.location.href}`;
+  const text = buildShareTextWithLink();
   openShareWindow(`https://www.linkedin.com/feed/?shareActive=true&text=${encodeURIComponent(text)}`);
   els.shareStatus.textContent = "Opened LinkedIn share.";
 }
 
 function shareToFacebook() {
-  const pageUrl = window.location.href;
-  const quote = buildShareText();
+  const pageUrl = getShareGameUrl();
+  const quote = buildShareTextWithLink();
   openShareWindow(`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(pageUrl)}&quote=${encodeURIComponent(quote)}`);
   els.shareStatus.textContent = "Opened Facebook share.";
 }
 
 function shareToWhatsApp() {
-  const text = `${buildShareText()} ${window.location.href}`;
+  const text = buildShareTextWithLink();
   openShareWindow(`https://wa.me/?text=${encodeURIComponent(text)}`);
   els.shareStatus.textContent = "Opened WhatsApp share.";
 }
@@ -444,6 +461,44 @@ function pickWithHistory(posts, count, seenSet) {
   return picks;
 }
 
+function questionKey(post) {
+  if (post.id) {
+    return `id:${post.id}`;
+  }
+
+  return `txt:${post.text.toLowerCase().replace(/\\s+/g, " ").trim()}`;
+}
+
+function pickUniqueFromLabel(posts, count, answer, seenSet, usedKeys) {
+  const unseen = shuffle(posts.filter((p) => !seenSet.has(p.id)));
+  const seen = shuffle(posts.filter((p) => seenSet.has(p.id)));
+  const ordered = [...unseen, ...seen];
+  const picked = [];
+
+  for (const post of ordered) {
+    const key = questionKey(post);
+    if (usedKeys.has(key)) {
+      continue;
+    }
+
+    usedKeys.add(key);
+    picked.push({ ...post, answer });
+    if (post.id) {
+      seenSet.add(post.id);
+    }
+
+    if (picked.length === count) {
+      break;
+    }
+  }
+
+  if (picked.length < count) {
+    throw new Error("Unable to build a unique quiz set from current post pool.");
+  }
+
+  return picked;
+}
+
 function buildQuizQuestions(postBank) {
   const aiCount = randomInt(MIN_AI_POSTS, MAX_AI_POSTS);
   const humanCount = QUIZ_LENGTH - aiCount;
@@ -453,8 +508,9 @@ function buildQuizQuestions(postBank) {
   }
 
   const seenSet = getSeenIds();
-  const aiQuestions = pickWithHistory(postBank.ai, aiCount, seenSet).map((p) => ({ ...p, answer: "ai" }));
-  const humanQuestions = pickWithHistory(postBank.human, humanCount, seenSet).map((p) => ({ ...p, answer: "human" }));
+  const usedKeys = new Set();
+  const aiQuestions = pickUniqueFromLabel(postBank.ai, aiCount, "ai", seenSet, usedKeys);
+  const humanQuestions = pickUniqueFromLabel(postBank.human, humanCount, "human", seenSet, usedKeys);
 
   saveSeenIds(seenSet);
   return shuffle([...aiQuestions, ...humanQuestions]);

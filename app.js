@@ -3,7 +3,13 @@ const MIN_AI_POSTS = 4;
 const MAX_AI_POSTS = 6;
 const QUESTION_TIME_LIMIT_SECONDS = 20;
 const RESULT_HOLD_SECONDS = 5;
+
+// Keep null for local-only mode. Point this to your compliant backend feed when ready.
 const REMOTE_POSTS_URL = null;
+
+const MIN_CONFIDENCE = 0.75;
+const SEEN_STORAGE_KEY = "slop_cop_seen_ids_v1";
+const POSTS_PER_LABEL = 140;
 
 const correctFeedbackLines = [
   "Nailed it. Your radar is sharp.",
@@ -40,82 +46,105 @@ const mockProfiles = [
   { name: "Daniel Brooks", headline: "Chief of Staff | Cross-functional execution" }
 ];
 
-const fallbackPosts = {
-  human: [
-    {
-      text: "Started my first role as an operations analyst 18 months ago. Today I presented our quarterly process review to leadership and used only one slide. The slide had three numbers and one quote from a support teammate. That was enough to make the room lean in.\n\nWhat changed was not the spreadsheet. What changed was the story around decision latency. We had teams waiting 4 to 5 business days for simple approvals because we were optimizing for audit cleanliness over operating speed.\n\nWe did two small things: introduced approval tiers for low-risk changes, and moved clarification questions to one shared thread instead of five private chats. Cycle time dropped 38% in one quarter.\n\nBig reminder for anyone early in their career: if your analysis does not change behavior, it is not done yet."
-    },
-    {
-      text: "A candidate asked me why our interview process includes a writing sample. Fair question, especially for roles that are not 'content' roles.\n\nIn our team, writing is the medium through which decisions travel. Product specs, handoff notes, escalation summaries, customer debriefs, retrospective outcomes. The artifact stays long after the meeting ends.\n\nI have seen brilliant people struggle because they had great ideas but could not package tradeoffs clearly. That gap creates hidden cost for everyone else.\n\nSo we test writing because we care about thinking, not grammar perfection. Can you define the problem, frame options, make a recommendation, and explain what you are de-prioritizing?\n\nCommunication is not a soft skill when it affects operating speed and trust. It is core execution."
-    },
-    {
-      text: "I used to think saying yes made me a supportive manager. In reality, it mostly made me a bottleneck.\n\nEvery time someone asked for a decision, I jumped in to protect quality. It felt responsible in the moment, but over time the team became slower and less confident.\n\nThis year I changed one line in my replies: 'What would you do if I were out for three days?'\n\nThe quality of proposals improved quickly. People came back with assumptions, options, risk notes, and a clear recommendation. My role shifted from decision-maker to quality amplifier.\n\nIf you are leading a team, ask yourself whether your involvement is raising capability or just lowering temporary anxiety."
-    },
-    {
-      text: "Yesterday one of our interns found a bug that survived two releases, three demos, and one launch checklist.\n\nThe bug itself mattered, but the real win was cultural. She challenged a senior engineer in a public review thread with clear evidence and a test case.\n\nNo eye-rolls, no status games, no 'let us take this offline.' Just curiosity and fast collaboration.\n\nI shared this with the team today because psychological safety is not a poster value. It is visible in tiny moments where junior people disagree and still feel respected.\n\nTalent compounds where speaking up is rewarded before it is polished."
-    },
-    {
-      text: "Quick note for founders hiring a first PM: if priorities shift every Monday, your PM will look inconsistent no matter how strong they are.\n\nI have been in that seat. You build one roadmap, then sales pressure changes everything, then a loud customer escalates, then an investor request lands. The PM appears slow, but the system is unstable.\n\nBefore evaluating PM performance, stabilize decision rights: who can move priority, under what conditions, and how tradeoffs are communicated to engineering and design.\n\nPlanning quality is an organizational output, not an individual personality trait.\n\nSet that foundation first, then hold the PM accountable for throughput and outcomes."
-    },
-    {
-      text: "A teammate told me my feedback was accurate but hard to use. It stung, because I care about helping people grow. She was right.\n\nI used to write observations like 'needs stronger stakeholder management' and call it a day. Correct, but not actionable.\n\nNow every feedback note includes one explicit next behavior and one upcoming situation where they can practice it. Example: 'Before next planning sync, send a one-paragraph pre-read with recommendation + open risk. I can review it with you first.'\n\nPrecision makes development fair.\n\nIf you lead people, ask whether your feedback gives direction or just diagnosis."
-    },
-    {
-      text: "We almost shipped a feature nobody wanted because every internal room said, 'This makes sense.'\n\nThen we ran three customer interviews and everything changed. Users did not want more configuration. They wanted fewer decisions and clearer defaults.\n\nWe removed half the settings, shipped simpler onboarding, and saw activation improve in two weeks.\n\nThe lesson keeps repeating: internal confidence is not external evidence.\n\nBefore your next build cycle, ask one uncomfortable question directly to a user and let that answer challenge your assumptions."
-    },
-    {
-      text: "I keep a private document called 'decisions I regret.' Not to dwell, but to detect patterns.\n\nThe strongest one for me: I move too fast when a senior person sounds certain. I confuse conviction with correctness.\n\nNow, for high-impact decisions, I force a 24-hour delay and ask one person who was not in the original conversation to challenge the recommendation.\n\nIt slowed us down slightly at first and then prevented expensive rework.\n\nMaturity is not never being wrong. It is designing your process so your most predictable errors are harder to repeat."
-    },
-    {
-      text: "My commute used to be my decompression ritual. Remote work removed that boundary, and I did not realize how much it mattered until my sleep got worse.\n\nI now run a 15-minute shutdown routine at 6:30 PM: close open loops, write tomorrow's first task, and send one final asynchronous update so nobody waits on me overnight.\n\nThe work quality did not drop. If anything, it improved because I start mornings with less cognitive residue.\n\nSustainable performance is often less about major life changes and more about repeatable transitions.\n\nIf your day keeps bleeding into your night, design a small ritual and protect it like any other commitment."
-    },
-    {
-      text: "Last quarter we missed a top-line target, but retention still improved meaningfully. If we had reacted only to the headline KPI, we would have made the wrong cuts.\n\nWhen we dug deeper, we saw users were getting value later in the lifecycle than expected. The onboarding metric looked weak, but long-term behavior improved once people crossed a specific usage threshold.\n\nSo we changed our activation definition and invested in faster time-to-threshold instead of chasing vanity growth.\n\nMetrics are directional instruments, not moral judgments.\n\nLook at behavior underneath before you celebrate or panic."
-    },
-    {
-      text: "We introduced a small line in decision docs: 'Who is likely to disagree with this?' It reduced rework more than any process template we launched this year.\n\nTeams now invite dissent earlier, especially from support and implementation folks who see edge cases first.\n\nThe output quality improved because objections arrived before code, not after rollout.\n\nHealthy disagreement is cheaper than late correction.\n\nIf your team repeatedly revisits decisions after launch, your issue might not be speed. It might be missing perspective at decision time."
-    },
-    {
-      text: "Promotion advice I wish I ignored sooner: 'Do more things.' Better advice: own one painful, high-friction problem end-to-end and make it visibly better for everyone around you.\n\nThe projects that moved my career were rarely glamorous. They were broken handoffs, vague ownership, unclear metrics, and recurring fire drills.\n\nI stopped trying to look busy and started trying to reduce organizational drag.\n\nPeople noticed because their day got easier, not because I made more noise.\n\nImpact is often quieter than ambition, but it compounds faster."
-    }
+const humanTemplates = {
+  openings: [
+    "A year ago, I inherited a process everyone hated but nobody owned.",
+    "Last quarter I made a decision that looked efficient on paper and painful in real life.",
+    "In a team retro this week, one comment changed how I lead project reviews.",
+    "I used to treat planning docs as admin work until one incident forced us to rewrite our approach.",
+    "A customer call yesterday exposed a blind spot we had normalized internally.",
+    "When I moved from IC to lead, I thought execution speed was the only metric that mattered.",
+    "This month we ran an experiment that felt tiny but had a surprisingly broad impact.",
+    "A junior teammate challenged my recommendation in public and improved the final outcome.",
+    "I recently reviewed six postmortems and noticed the same pattern repeating.",
+    "Three years into managing teams, I still relearn the same leadership lesson in new contexts."
   ],
-  ai: [
-    {
-      text: "In today's rapidly evolving digital economy, professionals who thrive are not merely reacting to change, they are engineering adaptive momentum. Over the last 90 days, I have been pressure-testing what I call the Precision Growth Loop: clarity of intent, consistency of execution, and compounding reflection.\n\nWhen teams align these three dimensions, performance stops being random. Effort becomes directional. Energy becomes transferable. Results become repeatable.\n\nThe real unlock is this: you do not need more hours, you need higher signal per hour. That means reducing cognitive fragmentation, operationalizing strategic priorities, and aggressively auditing low-leverage activity.\n\nIf your calendar is full but your trajectory feels flat, your system is likely optimized for motion, not momentum."
-    },
-    {
-      text: "Leadership in 2026 is less about authority and more about orchestration. The most effective operators are integrating human judgment with machine-accelerated insight to make faster, cleaner decisions at scale.\n\nI have seen a repeated pattern across high-performing organizations: they treat communication, data fluency, and adaptive learning as one integrated capability stack.\n\nWhen these skills operate in silos, teams create delay. When they are synchronized, teams create strategic velocity.\n\nYour title may get you attention, but your ability to convert complexity into aligned action is what creates long-term influence."
-    },
-    {
-      text: "I recently ran an experiment using AI-assisted prioritization across my weekly workflow. The outcome was not just higher output, it was significantly higher relevance of output.\n\nBy mapping tasks against impact potential, reversibility, and stakeholder dependency, I identified a major pattern: low-leverage tasks were occupying premium cognitive windows.\n\nAfter rebalancing, execution quality improved across every strategic objective. The key was not working harder. The key was sequencing better.\n\nMany professionals are not underperforming due to lack of ambition. They are underperforming because their attention allocation model is outdated."
-    },
-    {
-      text: "Stop outsourcing your growth to motivation. Motivation is volatile by design. Systems are stable by design.\n\nIn uncertain environments, elite performers build infrastructure for consistency: predefined decision rules, non-negotiable deep-work blocks, and explicit review loops.\n\nThis creates emotional independence from daily mood variance and accelerates compounding progress.\n\nIf your performance depends on how inspired you feel each morning, you are scaling chaos, not capability."
-    },
-    {
-      text: "The era of siloed excellence is over. Modern teams win by integrating speed, empathy, and precision into one execution rhythm that scales trust across functions.\n\nToo many organizations optimize for local efficiency and then wonder why strategic initiatives stall. The missing layer is cross-functional coherence.\n\nWhen product, operations, and go-to-market teams share a unified narrative, decisions move faster and handoffs lose less context.\n\nAlignment is not a meeting cadence. It is an operating discipline."
-    },
-    {
-      text: "Your personal brand is not what you post in moments of inspiration. It is the cumulative reliability of what you ship, how you communicate tradeoffs, and how consistently your behavior reflects your stated values.\n\nNarrative coherence is a strategic asset in a high-noise environment. People trust what feels internally consistent.\n\nIf your ambitions and your habits are misaligned, your brand debt compounds silently.\n\nSustainable credibility is built through repeated evidence, not occasional visibility."
-    },
-    {
-      text: "In a world increasingly shaped by automation, uniquely human capabilities become premium differentiators: judgment under ambiguity, empathic framing, and creative synthesis across disconnected domains.\n\nThe professionals who will outperform over the next decade are those who combine these human advantages with deliberate AI leverage.\n\nDo not frame this as replacement versus resistance. Frame it as capability architecture.\n\nThe question is no longer 'Will AI change my role?' The question is 'How fast can I redesign my role around higher-order value creation?'"
-    },
-    {
-      text: "Career acceleration in 2026 requires learning agility over static expertise. The best operators are becoming perpetual students with a bias toward experimentation, reflection, and rapid calibration.\n\nKnowledge half-life is shrinking. Fixed playbooks decay quickly. Adaptive frameworks persist.\n\nIf your growth strategy assumes environmental stability, your strategy is already outdated.\n\nBuild meta-skills that travel: sense-making, communication under uncertainty, and decision quality under incomplete information."
-    },
-    {
-      text: "When uncertainty rises, principles matter more than plans. Plans are perishable; principles are portable.\n\nIn volatile operating contexts, I return to four non-negotiables: clarity before scale, speed with accountability, explicit tradeoffs, and structured retrospection.\n\nThese principles create coherence even when conditions change faster than forecasts.\n\nIf your team feels directionless during change, the issue may not be planning rigor. It may be principle ambiguity."
-    },
-    {
-      text: "Execution excellence is less about short bursts of intensity and more about sustainable rhythm. Consistent cadence outperforms occasional heroics in every durable operating system.\n\nI recommend a simple weekly architecture: one strategic focus, three measurable commitments, one reflection checkpoint.\n\nThis structure reduces noise while preserving adaptability.\n\nWhen professionals say they are overwhelmed, it is often not a volume problem. It is a sequencing problem without a governing cadence."
-    },
-    {
-      text: "Innovation is not a department. Innovation is a behavior pattern repeated at team scale: curiosity, rapid feedback, disciplined iteration, and transparent learning loops.\n\nOrganizations that institutionalize this pattern do not just launch faster. They recover faster when assumptions break.\n\nResilience is not accidental. It is designed through operating habits that normalize learning speed.\n\nIf your team is afraid to run small experiments, you are paying hidden interest on certainty theater."
-    },
-    {
-      text: "Communication is the highest-leverage force multiplier in modern organizations. The ability to transform complexity into clear, shared action can compress weeks of ambiguity into one aligned decision cycle.\n\nMost execution delays are not caused by low effort. They are caused by fragmented interpretation.\n\nWhen leaders clarify context, constraints, and desired outcomes with precision, teams stop guessing and start building.\n\nClarity is not simplification. Clarity is strategic compression."
-    }
+  middleA: [
+    "The issue was not effort, it was ambiguity. Different teams were making different assumptions about success, so even good work created collisions.",
+    "We were over-indexed on internal consensus and under-indexed on direct evidence from users. That gap created rework we kept calling 'scope change.'",
+    "People were escalating late because the social cost of asking early was too high. Once we named that, behavior shifted quickly.",
+    "Our handoffs looked complete but lacked intent. Tasks were clear, tradeoffs were not, and that made quality inconsistent.",
+    "Most status updates were descriptive, not decision-oriented. We had movement, but not alignment.",
+    "The team was talented, but we confused familiarity with clarity. Everyone thought they understood priorities differently.",
+    "We tracked lots of metrics without distinguishing leading indicators from comfort metrics.",
+    "The problem looked technical at first, but it was mostly a communication design problem.",
+    "Execution debt had accumulated in places nobody celebrated: docs, naming, ownership maps, and rollback criteria.",
+    "We kept fixing symptoms because root-cause conversations were always deferred to 'next sprint.'"
+  ],
+  middleB: [
+    "So we made two practical changes: a one-page decision memo before kickoff, and a weekly 'what changed and why' note visible to everyone.",
+    "We replaced long update meetings with async briefs that required one recommendation and one explicit risk per project.",
+    "We introduced a simple rule: if priority changes, state what gets deprioritized in the same message.",
+    "We added one customer conversation to the start of every planning cycle instead of validating after implementation.",
+    "We started writing assumptions in plain language and assigning owners to each one so uncertainty became trackable.",
+    "We redesigned retrospectives around behavior changes, not storytelling, and followed up after two weeks.",
+    "We asked every project lead to include a 'who might disagree' section and invite that feedback early.",
+    "We moved from activity dashboards to outcome snapshots with 3 metrics and one narrative explanation.",
+    "We set explicit review windows so people could challenge decisions without being seen as blockers.",
+    "We separated urgent from important work in planning to avoid letting escalation channels define strategy."
+  ],
+  endings: [
+    "The measurable outcome mattered, but the bigger win was trust. Fewer surprises, cleaner decisions, and less emotional drag across teams.",
+    "Not everything improved immediately, but quality became more predictable and onboarding got easier for new teammates.",
+    "The result: less rework, faster decision cycles, and calmer collaboration when plans changed.",
+    "The interesting part is how small this felt operationally and how large it felt culturally.",
+    "If you are leading change, design for repeatability before visibility. Repeatable behaviors scale faster than speeches.",
+    "My takeaway: clarity is a product, not a byproduct. It requires deliberate design and maintenance.",
+    "This reminded me that strong teams are built in boring details long before launch day.",
+    "We still have gaps, but now they are visible and discussable, which is a real upgrade.",
+    "Leadership has become less about having answers and more about reducing ambiguity for others.",
+    "If this sounds familiar in your org, start with one ritual and make it non-negotiable for a month."
+  ]
+};
+
+const aiTemplates = {
+  openings: [
+    "In today's rapidly evolving landscape, career growth belongs to those who operationalize clarity at scale.",
+    "The highest performers in 2026 are not just working harder; they are architecting compounding execution systems.",
+    "Modern leadership is shifting from title-based authority to signal-based influence across complex environments.",
+    "If your strategy is static while your context is dynamic, your output will eventually decouple from impact.",
+    "I have been refining a framework for adaptive performance that consistently improves directional execution.",
+    "The market is rewarding professionals who combine narrative intelligence with measurable delivery loops.",
+    "Teams that win repeatedly are not lucky; they are intentionally designed for high-velocity learning.",
+    "The future of work will favor operators who can convert ambiguity into aligned action in real time.",
+    "Most organizations are over-optimized for activity and under-optimized for strategic coherence.",
+    "Execution quality is becoming the primary differentiator in a world where ideas are increasingly commoditized."
+  ],
+  middleA: [
+    "The unlock is integrating intent, prioritization, and reflective feedback into one continuous momentum engine.",
+    "When communication fidelity drops, decision latency rises and value creation becomes fragmented.",
+    "High-performing systems treat focus as a portfolio allocation problem, not a motivation problem.",
+    "Siloed optimization creates local wins and global drag, especially under volatility.",
+    "Without explicit tradeoff architecture, teams default to urgency theater and reactive planning.",
+    "Sustainable output depends on reducing cognitive context-switching across strategic workstreams.",
+    "Operators who model assumptions transparently make faster, cleaner pivots under uncertainty.",
+    "Clarity compounds because each aligned decision lowers the coordination cost of the next decision.",
+    "Ambition without execution cadence tends to produce motion density, not directional progress.",
+    "Professional leverage increases when individuals translate complexity into portable decision language."
+  ],
+  middleB: [
+    "I now use a simple stack: one strategic north star, three execution commitments, and one structured review checkpoint.",
+    "This quarter I mapped weekly actions to asymmetrical upside and reallocated high-energy blocks accordingly.",
+    "We implemented a repeatable decision protocol with explicit constraints, risk framing, and next-action ownership.",
+    "The team introduced a cadence where every initiative requires a measurable hypothesis and a learning objective.",
+    "We shifted to narrative-first operating reviews to improve shared context before discussing metrics.",
+    "A lightweight prioritization matrix helped us de-risk low-leverage work consuming premium bandwidth.",
+    "By codifying decision rights, we reduced escalation noise and increased execution velocity.",
+    "We replaced broad status rituals with precision updates anchored in directional signal quality.",
+    "A transparent tradeoff ledger increased accountability while reducing alignment debt across functions.",
+    "We operationalized retrospective loops so each sprint produced both output and capability growth."
+  ],
+  endings: [
+    "The result was not just higher output, but higher relevance of output against long-term objectives.",
+    "In short: less noise, more signal, and a stronger compounding trajectory over time.",
+    "If your calendar is full but progress feels flat, your system likely needs architecture, not intensity.",
+    "The organizations that master this will outperform through coherence, not chaos.",
+    "Execution excellence is ultimately a rhythm discipline before it becomes a scale advantage.",
+    "The next wave of differentiation will come from those who can learn and align faster than the environment shifts.",
+    "This is why capability design is becoming more valuable than isolated tactical excellence.",
+    "When strategic intent and operational behavior align, trust and throughput improve simultaneously.",
+    "The key takeaway: build for repeatability first, then optimize for acceleration.",
+    "In uncertain markets, principles and cadence outperform heroics and inspiration cycles."
   ]
 };
 
@@ -160,8 +189,7 @@ const state = {
   userAnswers: [],
   questionTimer: null,
   resultHoldTimer: null,
-  timerStartedAt: 0,
-  timerDuration: 0
+  timerStartedAt: 0
 };
 
 function randomInt(min, max) {
@@ -265,24 +293,48 @@ function openShareWindow(url) {
 
 function shareToLinkedIn() {
   const text = `${buildShareText()} ${window.location.href}`;
-  const shareUrl = `https://www.linkedin.com/feed/?shareActive=true&text=${encodeURIComponent(text)}`;
-  openShareWindow(shareUrl);
+  openShareWindow(`https://www.linkedin.com/feed/?shareActive=true&text=${encodeURIComponent(text)}`);
   els.shareStatus.textContent = "Opened LinkedIn share.";
 }
 
 function shareToFacebook() {
   const pageUrl = window.location.href;
   const quote = buildShareText();
-  const shareUrl = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(pageUrl)}&quote=${encodeURIComponent(quote)}`;
-  openShareWindow(shareUrl);
+  openShareWindow(`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(pageUrl)}&quote=${encodeURIComponent(quote)}`);
   els.shareStatus.textContent = "Opened Facebook share.";
 }
 
 function shareToWhatsApp() {
   const text = `${buildShareText()} ${window.location.href}`;
-  const shareUrl = `https://wa.me/?text=${encodeURIComponent(text)}`;
-  openShareWindow(shareUrl);
+  openShareWindow(`https://wa.me/?text=${encodeURIComponent(text)}`);
   els.shareStatus.textContent = "Opened WhatsApp share.";
+}
+
+function buildTemplatePool(label, templates, total) {
+  const posts = [];
+  for (let i = 0; i < total; i += 1) {
+    const a = templates.openings[i % templates.openings.length];
+    const b = templates.middleA[(i * 3) % templates.middleA.length];
+    const c = templates.middleB[(i * 5) % templates.middleB.length];
+    const d = templates.endings[(i * 7) % templates.endings.length];
+
+    posts.push({
+      id: `${label}-tmpl-${i + 1}`,
+      label,
+      confidence: 0.82,
+      source: "local_template_bank",
+      text: `${a}\n\n${b}\n\n${c}\n\n${d}`
+    });
+  }
+
+  return posts;
+}
+
+function buildFallbackBank() {
+  return {
+    human: buildTemplatePool("human", humanTemplates, POSTS_PER_LABEL),
+    ai: buildTemplatePool("ai", aiTemplates, POSTS_PER_LABEL)
+  };
 }
 
 function normalizeRemotePosts(remote) {
@@ -292,7 +344,7 @@ function normalizeRemotePosts(remote) {
     return normalized;
   }
 
-  remote.forEach((item) => {
+  remote.forEach((item, idx) => {
     if (!item || typeof item.text !== "string" || typeof item.label !== "string") {
       return;
     }
@@ -302,15 +354,41 @@ function normalizeRemotePosts(remote) {
       return;
     }
 
-    normalized[label].push({ text: item.text.trim() });
+    const confidence = typeof item.confidence === "number" ? item.confidence : 0.8;
+    if (confidence < MIN_CONFIDENCE) {
+      return;
+    }
+
+    normalized[label].push({
+      id: item.id || `remote-${label}-${idx + 1}`,
+      label,
+      text: item.text.trim(),
+      confidence,
+      source: item.source || "remote_feed"
+    });
   });
 
   return normalized;
 }
 
+function dedupeByText(posts) {
+  const seen = new Set();
+  return posts.filter((p) => {
+    const key = p.text.toLowerCase().replace(/\s+/g, " ").trim();
+    if (seen.has(key)) {
+      return false;
+    }
+
+    seen.add(key);
+    return true;
+  });
+}
+
 async function loadPosts() {
+  const fallbackBank = buildFallbackBank();
+
   if (!REMOTE_POSTS_URL) {
-    return fallbackPosts;
+    return fallbackBank;
   }
 
   try {
@@ -322,18 +400,48 @@ async function loadPosts() {
     const remotePosts = await response.json();
     const normalized = normalizeRemotePosts(remotePosts);
 
-    if (normalized.human.length >= QUIZ_LENGTH && normalized.ai.length >= QUIZ_LENGTH) {
-      return normalized;
-    }
-
     return {
-      human: [...fallbackPosts.human, ...normalized.human],
-      ai: [...fallbackPosts.ai, ...normalized.ai]
+      human: dedupeByText([...normalized.human, ...fallbackBank.human]),
+      ai: dedupeByText([...normalized.ai, ...fallbackBank.ai])
     };
   } catch (error) {
-    console.warn("Using fallback post bank", error);
-    return fallbackPosts;
+    console.warn("Using local compliant fallback bank", error);
+    return fallbackBank;
   }
+}
+
+function getSeenIds() {
+  try {
+    const raw = localStorage.getItem(SEEN_STORAGE_KEY);
+    if (!raw) {
+      return new Set();
+    }
+
+    const arr = JSON.parse(raw);
+    return new Set(Array.isArray(arr) ? arr : []);
+  } catch {
+    return new Set();
+  }
+}
+
+function saveSeenIds(set) {
+  const arr = [...set];
+  const bounded = arr.slice(Math.max(0, arr.length - 2000));
+  localStorage.setItem(SEEN_STORAGE_KEY, JSON.stringify(bounded));
+}
+
+function pickWithHistory(posts, count, seenSet) {
+  const unseen = posts.filter((p) => !seenSet.has(p.id));
+  const seen = posts.filter((p) => seenSet.has(p.id));
+
+  const picks = [...pickRandom(unseen, Math.min(count, unseen.length))];
+
+  if (picks.length < count) {
+    picks.push(...pickRandom(seen, count - picks.length));
+  }
+
+  picks.forEach((p) => seenSet.add(p.id));
+  return picks;
 }
 
 function buildQuizQuestions(postBank) {
@@ -344,16 +452,11 @@ function buildQuizQuestions(postBank) {
     throw new Error("Post bank is too small to generate a new quiz.");
   }
 
-  const aiQuestions = pickRandom(postBank.ai, aiCount).map((p) => ({
-    text: p.text,
-    answer: "ai"
-  }));
+  const seenSet = getSeenIds();
+  const aiQuestions = pickWithHistory(postBank.ai, aiCount, seenSet).map((p) => ({ ...p, answer: "ai" }));
+  const humanQuestions = pickWithHistory(postBank.human, humanCount, seenSet).map((p) => ({ ...p, answer: "human" }));
 
-  const humanQuestions = pickRandom(postBank.human, humanCount).map((p) => ({
-    text: p.text,
-    answer: "human"
-  }));
-
+  saveSeenIds(seenSet);
   return shuffle([...aiQuestions, ...humanQuestions]);
 }
 
@@ -405,7 +508,6 @@ function advanceQuestion() {
 function startResultHoldCountdown() {
   clearTimers();
   state.timerStartedAt = Date.now();
-  state.timerDuration = RESULT_HOLD_SECONDS;
 
   setTimerBarVisible(false);
   setTimerVisuals(RESULT_HOLD_SECONDS, RESULT_HOLD_SECONDS, "Next in");
@@ -462,9 +564,7 @@ function handleTimeout() {
 
 function startQuestionCountdown() {
   clearTimers();
-
   state.timerStartedAt = Date.now();
-  state.timerDuration = QUESTION_TIME_LIMIT_SECONDS;
 
   setTimerBarVisible(true);
   setTimerVisuals(QUESTION_TIME_LIMIT_SECONDS, QUESTION_TIME_LIMIT_SECONDS, "Time");
@@ -490,7 +590,6 @@ function renderCurrentQuestion() {
   renderLinkedInPost(q);
 
   state.answered = false;
-
   unlockAnswerButtons();
   startQuestionCountdown();
 }
